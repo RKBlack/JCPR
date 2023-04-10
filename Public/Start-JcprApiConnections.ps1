@@ -11,7 +11,6 @@ function Start-JcprApiConnections {
             'System.Windows.Forms',
             'System.Drawing'
         )
-
         $RequiredAssemblies | ForEach-Object {
             if (-not (Get-Command $_ -ErrorAction SilentlyContinue)) {
                 Add-Type -AssemblyName $_
@@ -23,7 +22,6 @@ function Start-JcprApiConnections {
             'JumpCloud',
             'TUN.CredentialManager'
         )
-
         $RequiredPsModules | ForEach-Object {
             if (-not (Get-Module $_ -ListAvailable -ErrorAction SilentlyContinue)) {
                 Install-Module $_ -Force
@@ -34,11 +32,9 @@ function Start-JcprApiConnections {
 
     process {
         
-        # Get existing credentials from the credential manager
         $HuduApi = Get-StoredCredential -Target 'JCPR/HuduApi'
         $JcApi = Get-StoredCredential -Target 'JCPR/JcApi'
 
-        # If the credentials don't exist, prompt the user for them
         if ($null -eq $HuduApi) {
             $HuduCreds = Get-Credential -Message 'Enter your Hudu API Key'
             New-StoredCredential -Target 'JCPR/HuduApi' -Credential $HuduCreds -Type Generic -Persist LocalMachine
@@ -50,7 +46,6 @@ function Start-JcprApiConnections {
             $JcApi = Get-StoredCredential -Target 'JCPR/JcApi'
         }
 
-        # Connect to the APIs
         New-HuduAPIKey -ApiKey (ConvertFrom-SecureString (Get-StoredCredential -Target 'JCPR/HuduApi').Password -AsPlainText)
         New-HuduBaseURL -BaseURL $HuduBaseUrl
         Connect-JCOnline -JumpCloudAPIKey (ConvertFrom-SecureString (Get-StoredCredential -Target 'JCPR/JcApi').Password -AsPlainText) -JumpCloudOrgID $JcOrgId

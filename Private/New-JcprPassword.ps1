@@ -17,8 +17,7 @@ function New-JcprPassword {
             }
             $i--
         }
-        $NewPassword = ($NewPasswordSeed -join '-') + "$(Get-Random -Minimum 10 -Maximum 99)"
-        return $NewPassword
+        ($NewPasswordSeed -join '-') + "$(Get-Random -Minimum 10 -Maximum 99)"
     }
     end {
     
