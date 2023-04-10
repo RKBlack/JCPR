@@ -18,8 +18,12 @@ function Invoke-JcPasswordRotation {
         if (-not ($JcSystemUser.username -contains $JcUser.username)) {
             $RemoveJcSystemUser = $true
             Add-JCSystemUser -SystemID $JcAgentComputer._id -UserID $JcUser._id
-            Write-Host 'Waiting 120 seconds for JumpCloud to sync the user to this computer'
-            Start-Sleep 120
+            Write-Host 'Waiting 30 seconds for JumpCloud to sync the user to this computer'
+            Start-Sleep 30            
+            $JcUser = Get-JCUser | Where-Object { $_.email -eq $Email }
+            $JcCompany = Get-JCOrganization | Where-Object { $_.OrgID -eq $JcUser.organization }
+            $JcAgentComputer = Get-JCSystem | Where-Object { $_.hostname -eq (hostname) }
+            $JcSystemUser = Get-JCSystemUser $JcAgentComputer._id
             if (-not ($JcSystemUser.username -contains $JcUser.username)) {
                 Write-Error 'JumpCloud did not sync the user to this computer'
                 exit 3
@@ -30,11 +34,13 @@ function Invoke-JcPasswordRotation {
         $HuduPassword = Get-HuduPasswords -CompanyId $HuduCompany.id | Where-Object { $_.username -eq $Jcuser.username }
     
         Add-Type -AssemblyName System.DirectoryServices.AccountManagement
-        $CredTestObj1 = New-Object System.DirectoryServices.AccountManagement.PrincipalContext('machine', $env:COMPUTERNAME)
-        if (-not $CredTestObj1.ValidateCredentials($HuduPassword.username, $HuduPassword.password)) {
+        $CredTestObj = New-Object System.DirectoryServices.AccountManagement.PrincipalContext('machine', $(hostname))
+        if (-not $CredTestObj.ValidateCredentials($HuduPassword.username, $HuduPassword.password)) {
             Write-Error 'Hudu password is not valid'
             exit 4
         }
+        $CredTestObj.Dispose()
+        net use \\$(hostname)\IPC$ /delete
 
         $NewJcPassword = New-JcprPassword
 
@@ -55,14 +61,18 @@ function Invoke-JcPasswordRotation {
         Start-Sleep 30
         Get-Service 'jumpcloud-agent' | Restart-Service
         Start-Sleep 30
-        $CredTestObj2 = New-Object System.DirectoryServices.AccountManagement.PrincipalContext('machine', $env:COMPUTERNAME)
-        if (-not $CredTestObj2.ValidateCredentials($ChangedHuduPassword.username, $ChangedHuduPassword.password)) {
+        $CredTestObj = New-Object System.DirectoryServices.AccountManagement.PrincipalContext('machine', $(hostname))
+        if (-not $CredTestObj.ValidateCredentials($ChangedHuduPassword.username, $ChangedHuduPassword.password)) {
             Write-Error 'The new Hudu password is not valid'
             exit 5
         }
         if ($RemoveJcSystemUser) {
-            Remove-JCSystemUser -SystemID $JcAgentComputer._id -UserID $JcUser._id -force
+            Remove-JCSystemUser -SystemID $JcAgentComputer._id -UserID $JcUser._id
+            Start-Sleep 30
+            net user $JcUser.username /DELETE 
         }
+        $CredTestObj.Dispose()
+        net use \\$(hostname)\IPC$ /delete
     }
 
     end {
