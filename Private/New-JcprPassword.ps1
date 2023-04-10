@@ -8,7 +8,8 @@ function New-JcprPassword {
 
     }
     process {
-        $WordList = Import-Csv Push-Location "$PSScriptRoot\words.txt"
+        Set-Location $PSScriptRoot
+        $WordList = Import-Csv ".\words.txt"
         $i = $WordCount - 1
         $NewPasswordSeed = $WordList | Get-Random -Count $wordCount | ForEach-Object { $_.word }
         while ($i -ge 0) {
