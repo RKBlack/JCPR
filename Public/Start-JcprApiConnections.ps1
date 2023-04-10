@@ -1,7 +1,7 @@
 function Start-JcprApiConnections {
     [CmdletBinding()]
     param (
-        
+        [switch]$Silent
     )
 
     begin {
@@ -34,12 +34,12 @@ function Start-JcprApiConnections {
         
         $UpdateStoredCredentials = $false
 
-        $HuduBaseUrl = Get-StoredCredential -Target 'JCPR/HuduBaseUrl'
-        $HuduApi = Get-StoredCredential -Target 'JCPR/HuduApi'
-        $JcOrgId = Get-StoredCredential -Target 'JCPR/JcOrgId'
-        $JcApi = Get-StoredCredential -Target 'JCPR/JcApi'
+        $HuduBaseUrl = Get-StoredCredential -Target 'JCPR/HuduBaseUrl' -ErrorAction SilentlyContinue
+        $HuduApi = Get-StoredCredential -Target 'JCPR/HuduApi' -ErrorAction SilentlyContinue
+        $JcOrgId = Get-StoredCredential -Target 'JCPR/JcOrgId' -ErrorAction SilentlyContinue
+        $JcApi = Get-StoredCredential -Target 'JCPR/JcApi' -ErrorAction SilentlyContinue
 
-        if ($HuduBaseUrl -or $HuduApi -or $JcOrgId -or $JcApi) {
+        if (($null -ne $HuduBaseUrl) -or ($null -ne $HuduApi) -or ($null -ne $JcOrgId) -or ($null -ne $JcApi) -and -not $Silent) {
             Write-Verbose 'All API Connection Information is stored in the Credential Manager.'
 
             $ReplaceMessage = 'Would  you like to replace the existing stored API connection information?'
@@ -56,7 +56,13 @@ function Start-JcprApiConnections {
             }
         }
         
-        if (-not $HuduBaseUrl -or -not $HuduApi -or -not $JcOrgId -or -not $JcApi -or $UpdateStoredCredentials) {
+        if (($null -eq $HuduBaseUrl) -or ($null -eq $HuduApi) -or ($null -eq $JcOrgId) -or ($null -eq $JcApi) -or $UpdateStoredCredentials) {
+
+            if ($Silent) {
+                Write-Error 'API Connection Information is not stored in the Credential Manager. Please run the script without the -Silent switch.'
+                return
+            }
+
             $ApiForm = New-Object Windows.Forms.Form
             $ApiForm.Text = 'Enter your API Connection Information'
             $ApiForm.Size = New-Object System.Drawing.Size(400, 320)
@@ -130,16 +136,16 @@ function Start-JcprApiConnections {
 
             $ApiForm.ShowDialog()
         
-            New-StoredCredential -Target 'JCPR/HuduBaseUrl' -UserName 'HuduBaseUrl' -Password $HuduBaseUrlForm.Text -Type Generic -Persist LocalMachine
+            $null = New-StoredCredential -Target 'JCPR/HuduBaseUrl' -UserName 'HuduBaseUrl' -Password $HuduBaseUrlForm.Text -Type Generic -Persist LocalMachine
             $HuduApi = Get-StoredCredential -Target 'JCPR/HuduBaseUrl'
 
-            New-StoredCredential -Target 'JCPR/HuduApi' -UserName 'HuduAPI' -Password $HuduApiForm.Text -Type Generic -Persist LocalMachine
+            $null = New-StoredCredential -Target 'JCPR/HuduApi' -UserName 'HuduAPI' -Password $HuduApiForm.Text -Type Generic -Persist LocalMachine
             $HuduApi = Get-StoredCredential -Target 'JCPR/HuduApi'
 
-            New-StoredCredential -Target 'JCPR/JcOrgId' -UserName 'JcOrgId' -Password $JcOrgIdForm.Text -Type Generic -Persist LocalMachine
+            $null = New-StoredCredential -Target 'JCPR/JcOrgId' -UserName 'JcOrgId' -Password $JcOrgIdForm.Text -Type Generic -Persist LocalMachine
             $JcOrgId = Get-StoredCredential -Target 'JCPR/JcOrgId'
 
-            New-StoredCredential -Target 'JCPR/JcApi' -UserName 'JcAPI' -Password $JcApiForm.Text -Type Generic -Persist LocalMachine
+            $null = New-StoredCredential -Target 'JCPR/JcApi' -UserName 'JcAPI' -Password $JcApiForm.Text -Type Generic -Persist LocalMachine
             $JcApi = Get-StoredCredential -Target 'JCPR/JcApi'
 
         }
@@ -150,7 +156,7 @@ function Start-JcprApiConnections {
             JumpCloudAPIKey = (ConvertFrom-SecureString (Get-StoredCredential -Target 'JCPR/JcApi').Password -AsPlainText)
             JumpCloudOrgID = (ConvertFrom-SecureString (Get-StoredCredential -Target 'JCPR/JcOrgId').Password -AsPlainText)
         }
-        Connect-JCOnline $JCOnlineParams
+        Connect-JCOnline @JCOnlineParams | Out-Null
 
     }
     
