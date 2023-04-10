@@ -39,7 +39,7 @@ function Start-JcprApiConnections {
         $JcOrgId = Get-StoredCredential -Target 'JCPR/JcOrgId'
         $JcApi = Get-StoredCredential -Target 'JCPR/JcApi'
 
-        if ($HuduBaseUrl -and $HuduApi -and $JcOrgId -and $JcApi) {
+        if ($HuduBaseUrl -or $HuduApi -or $JcOrgId -or $JcApi) {
             Write-Verbose 'All API Connection Information is stored in the Credential Manager.'
 
             $ReplaceMessage = 'Would  you like to replace the existing stored API connection information?'
@@ -125,7 +125,7 @@ function Start-JcprApiConnections {
             $ApiFormCancelButton.Size = New-Object System.Drawing.Size(75, 23)
             $ApiFormCancelButton.Text = 'Cancel'
             $ApiFormCancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
-            $ApiForm.ApiFormCancelButton = $ApiFormCancelButton
+            $ApiForm.CancelButton = $ApiFormCancelButton
             $ApiForm.Controls.Add($ApiFormCancelButton)
 
             $ApiForm.ShowDialog()
